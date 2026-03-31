@@ -1,0 +1,103 @@
+<%- include('../../layouts/header') %>
+
+<div class="glass animate-fade" style="padding: 2rem; border-radius: var(--radius-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Danh sách phiếu</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem;">Tổng số có <%= tickets.length %> phiếu trong hệ thống</p>
+        </div>
+        <a href="/admin/repair-tickets/create" class="btn-premium">
+            <i class="fas fa-plus"></i> Lập phiếu mới
+        </a>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Ngày tạo</th>
+                    <th>Mã phiếu</th>
+                    <th>Khách hàng</th>
+                    <th>Thiết bị</th>
+                    <th>Trạng thái</th>
+                    <th>Chi phí</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (tickets && tickets.length > 0) { %>
+                    <% tickets.forEach(ticket => { %>
+                        <tr>
+                            <td><%= new Date(ticket.createdAt).toLocaleDateString('vi-VN') %></td>
+                            <td style="font-weight: 600; color: var(--primary-light);">#<%= ticket.ticket_code %></td>
+                            <td><%= ticket.customer_name %></td>
+                            <td><%= ticket.device_name %></td>
+                            <td>
+                                <select class="badge <%= getStatusBadge(ticket.status) %>" data-id="<%= ticket._id %>" onchange="updateStatus(this)" style="border: none; outline: none; cursor: pointer;">
+                                    <option value="pending" <%= ticket.status === 'pending' ? 'selected' : '' %>>Đang chờ</option>
+                                    <option value="repairing" <%= ticket.status === 'repairing' ? 'selected' : '' %>>Đang sửa</option>
+                                    <option value="completed" <%= ticket.status === 'completed' ? 'selected' : '' %>>Hoàn tất</option>
+                                    <option value="delivered" <%= ticket.status === 'delivered' ? 'selected' : '' %>>Đã giao</option>
+                                    <option value="canceled" <%= ticket.status === 'canceled' ? 'selected' : '' %>>Đã hủy</option>
+                                </select>
+                            </td>
+                            <td><%= formatCurrency(ticket.total_cost) %></td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn-premium" style="padding: 0.5rem; width: 36px; height: 36px;" onclick="cancelTicket('<%= ticket._id %>')">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 4rem;">Chưa có phiếu sửa chữa nào được tạo</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function updateStatus(select) {
+        const id = select.dataset.id;
+        const status = select.value;
+        try {
+            const res = await fetch(`/api/v1/repair-tickets/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                location.reload();
+            } else {
+                alert('Có lỗi xảy ra khi cập nhật trạng thái');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function cancelTicket(id) {
+        if (!confirm('Bạn có chắc chắn muốn hủy phiếu này? Thao tác này sẽ hoàn lại linh kiện vào kho.')) return;
+        try {
+            const res = await fetch(`/api/v1/repair-tickets/${id}/cancel`, {
+                method: 'PATCH'
+            });
+            if (res.ok) {
+                alert('Đã hủy phiếu thành công');
+                location.reload();
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Lỗi khi hủy phiếu');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+</script>
+
+<%- include('../../layouts/footer') %>

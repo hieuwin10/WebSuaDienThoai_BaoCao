@@ -1,0 +1,118 @@
+<%- include('../layouts/header') %>
+
+<div class="glass animate-fade" style="padding: 2rem; border-radius: var(--radius-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Quan ly danh muc</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem;">Phan loai linh kien va dich vu sua chua</p>
+        </div>
+        <button class="btn-premium" onclick="openModal()">
+            <i class="fas fa-plus"></i> Them danh muc
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table style="max-width: 800px;">
+            <thead>
+                <tr>
+                    <th>Ten danh muc</th>
+                    <th>Slug</th>
+                    <th style="text-align: right;">Thao tac</th>
+                </tr>
+            </thead>
+            <tbody id="categoryTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="categoryModal" class="glass" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="glass" style="width: 100%; max-width: 400px; padding: 2.5rem; border-radius: var(--radius-xl);">
+        <h2 id="modalTitle" style="margin-bottom: 1.5rem; font-weight: 700;">Them danh muc</h2>
+        <form id="categoryForm">
+            <input type="hidden" id="categoryId">
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Ten danh muc</label>
+                <input type="text" id="name" class="form-input-premium" required placeholder="VD: Man hinh, Pin...">
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" class="btn-premium" style="background: var(--bg-card); color: var(--text-main);" onclick="closeModal()">Huy</button>
+                <button type="submit" class="btn-premium">Luu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    async function loadData() {
+        const res = await fetch('/api/v1/categories');
+        const data = await res.json();
+        const tbody = document.getElementById('categoryTable');
+
+        tbody.innerHTML = data.map(c => `
+            <tr>
+                <td style="font-weight: 600;">${c.name}</td>
+                <td><code style="background: rgba(255,255,255,0.05); padding: 0.2rem 0.4rem; border-radius: 4px;">${c.slug}</code></td>
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button class="btn-premium" style="padding: 0.5rem; width: 32px; height: 32px;" onclick="editCategory('${c._id}', '${c.name}')">
+                            <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
+                        </button>
+                        <button class="btn-premium" style="padding: 0.5rem; width: 32px; height: 32px; background: var(--danger);" onclick="deleteCategory('${c._id}')">
+                            <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openModal() {
+        document.getElementById('modalTitle').innerText = 'Them danh muc';
+        document.getElementById('categoryId').value = '';
+        document.getElementById('categoryForm').reset();
+        document.getElementById('categoryModal').style.display = 'flex';
+    }
+
+    function editCategory(id, name) {
+        document.getElementById('modalTitle').innerText = 'Sua danh muc';
+        document.getElementById('categoryId').value = id;
+        document.getElementById('name').value = name;
+        document.getElementById('categoryModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('categoryModal').style.display = 'none';
+    }
+
+    document.getElementById('categoryForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('categoryId').value;
+        const data = { name: document.getElementById('name').value };
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/v1/categories/${id}` : '/api/v1/categories';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                closeModal();
+                loadData();
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    async function deleteCategory(id) {
+        if (!confirm('Xoa danh muc nay?')) return;
+        try {
+            const res = await fetch(`/api/v1/categories/${id}`, { method: 'DELETE' });
+            if (res.ok) loadData();
+        } catch (err) { console.error(err); }
+    }
+
+    loadData();
+</script>
+
+<%- include('../layouts/footer') %>

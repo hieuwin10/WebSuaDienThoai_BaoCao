@@ -1,0 +1,166 @@
+<%- include('../layouts/header') %>
+
+<div class="glass animate-fade" style="padding: 2rem; border-radius: var(--radius-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Quan ly linh kien & dich vu</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem;">Quan ly kho hang va cac dich vu sua chua</p>
+        </div>
+        <button class="btn-premium" onclick="openModal()">
+            <i class="fas fa-plus"></i> Them moi
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>San pham / Dich vu</th>
+                    <th>Gia niem yet</th>
+                    <th>Danh muc</th>
+                    <th>SKU / Ma</th>
+                    <th>Thao tac</th>
+                </tr>
+            </thead>
+            <tbody id="productTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="productModal" class="glass" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="glass" style="width: 100%; max-width: 500px; padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl);">
+        <h2 id="modalTitle" style="margin-bottom: 1.5rem; font-weight: 700;">Them san pham</h2>
+        <form id="productForm">
+            <input type="hidden" id="productId">
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Ten san pham</label>
+                <input type="text" id="title" class="form-input-premium" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Gia (VND)</label>
+                    <input type="number" id="price" class="form-input-premium" required>
+                </div>
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">SKU</label>
+                    <input type="text" id="sku" class="form-input-premium" required>
+                </div>
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Danh muc</label>
+                <select id="category" class="form-input-premium" required></select>
+            </div>
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Mo ta</label>
+                <textarea id="description" class="form-input-premium" rows="3"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" class="btn-premium" style="background: var(--bg-card); color: var(--text-main);" onclick="closeModal()">Huy</button>
+                <button type="submit" class="btn-premium">Luu thay doi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    async function loadData() {
+        const [pRes, cRes] = await Promise.all([
+            fetch('/api/v1/products'),
+            fetch('/api/v1/categories')
+        ]);
+        const pData = await pRes.json();
+        const cData = await cRes.json();
+
+        const catSelect = document.getElementById('category');
+        catSelect.innerHTML = cData.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+
+        const tbody = document.getElementById('productTable');
+        const products = Array.isArray(pData) ? pData : (pData.products || []);
+
+        tbody.innerHTML = products.map(p => `
+            <tr>
+                <td>
+                    <div style="font-weight: 600;">${p.title}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${p.description || ''}</div>
+                </td>
+                <td style="font-weight: 600;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price)}</td>
+                <td><span class="badge badge-info">${p.category?.name || 'Chua phan loai'}</span></td>
+                <td><code style="background: rgba(255,255,255,0.05); padding: 0.2rem 0.4rem; border-radius: 4px;">${p.sku || 'N/A'}</code></td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-premium" style="padding: 0.5rem; width: 32px; height: 32px;" onclick="editProduct('${p._id}', '${p.title}', ${p.price}, '${p.sku}', '${p.category?._id}', '${p.description}')">
+                            <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
+                        </button>
+                        <button class="btn-premium" style="padding: 0.5rem; width: 32px; height: 32px; background: var(--danger);" onclick="deleteProduct('${p._id}')">
+                            <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openModal() {
+        document.getElementById('modalTitle').innerText = 'Them san pham';
+        document.getElementById('productId').value = '';
+        document.getElementById('productForm').reset();
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    function editProduct(id, title, price, sku, catId, desc) {
+        document.getElementById('modalTitle').innerText = 'Sua san pham';
+        document.getElementById('productId').value = id;
+        document.getElementById('title').value = title;
+        document.getElementById('price').value = price;
+        document.getElementById('sku').value = sku;
+        document.getElementById('category').value = catId;
+        document.getElementById('description').value = desc === 'undefined' ? '' : desc;
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').style.display = 'none';
+    }
+
+    document.getElementById('productForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('productId').value;
+        const data = {
+            title: document.getElementById('title').value,
+            price: Number(document.getElementById('price').value),
+            sku: document.getElementById('sku').value,
+            category: document.getElementById('category').value,
+            description: document.getElementById('description').value
+        };
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/v1/products/${id}` : '/api/v1/products';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                closeModal();
+                loadData();
+            } else {
+                const err = await res.json();
+                alert(err.message || 'Loi thao tac');
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    async function deleteProduct(id) {
+        if (!confirm('Xoa linh kien nay?')) return;
+        try {
+            const res = await fetch(`/api/v1/products/${id}`, { method: 'DELETE' });
+            if (res.ok) loadData();
+        } catch (err) { console.error(err); }
+    }
+
+    loadData();
+</script>
+
+<%- include('../layouts/footer') %>

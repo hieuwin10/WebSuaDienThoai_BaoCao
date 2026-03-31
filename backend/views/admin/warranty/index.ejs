@@ -1,0 +1,73 @@
+<%- include('../../layouts/header') %>
+
+<div class="glass animate-fade" style="padding: 2rem; border-radius: var(--radius-xl);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Quản lý Bảo hành</h2>
+            <p style="color: var(--text-muted); font-size: 0.875rem;">Theo dõi thời hạn và trạng thái bảo hành của thiết bị</p>
+        </div>
+        <div class="glass" style="display: flex; align-items: center; padding: 0.5rem 1rem; border-radius: var(--radius-md);">
+            <i class="fas fa-search" style="color: var(--text-muted); margin-right: 0.75rem;"></i>
+            <input type="text" id="warrantySearch" placeholder="Nhập mã phiếu..." style="background: none; border: none; color: white; outline: none; width: 200px;" onkeyup="searchWarranty(this.value)">
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã phiếu</th>
+                    <th>Thiết bị</th>
+                    <th>Ngày bắt đầu</th>
+                    <th>Ngày hết hạn</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="warrantyTable">
+                <!-- Data loaded via JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function loadData() {
+        const res = await fetch('/api/v1/warranty');
+        const data = await res.json();
+        renderTable(data);
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('warrantyTable');
+        tbody.innerHTML = data.map(w => {
+            const isExpired = new Date(w.end_date) < new Date();
+            return `
+                <tr>
+                    <td><code style="color: var(--primary-light); font-weight: 700;">#${w.ticket_id?.ticket_code || 'N/A'}</code></td>
+                    <td>
+                        <div style="font-weight: 600;">${w.ticket_id?.device_id?.brand || ''} ${w.ticket_id?.device_id?.model_name || 'N/A'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">IMEI: ${w.ticket_id?.device_id?.imei || 'N/A'}</div>
+                    </td>
+                    <td>${new Date(w.start_date).toLocaleDateString('vi-VN')}</td>
+                    <td>${new Date(w.end_date).toLocaleDateString('vi-VN')}</td>
+                    <td>
+                        <span class="badge ${isExpired ? 'badge-danger' : 'badge-success'}">
+                            ${isExpired ? 'Hết hạn' : 'Đang bảo hành'}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="5" style="text-align:center;">Không tìm thấy dữ liệu</td></tr>';
+    }
+
+    async function searchWarranty(query) {
+        if (!query) return loadData();
+        const res = await fetch(`/api/v1/warranty/search?q=${query}`);
+        const data = await res.json();
+        renderTable(data);
+    }
+
+    loadData();
+</script>
+
+<%- include('../../layouts/footer') %>

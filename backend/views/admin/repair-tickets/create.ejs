@@ -1,0 +1,84 @@
+<%- include('../../layouts/header') %>
+
+<div class="glass animate-fade" style="padding: 2rem; border-radius: var(--radius-xl);">
+    <div style="margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 700;">Lập phiếu sửa chữa mới</h2>
+        <p style="color: var(--text-muted); font-size: 0.875rem;">Vui lòng điền đầy đủ thông tin khách hàng và kỹ thuật</p>
+    </div>
+
+    <form id="ticketForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Customer Info -->
+        <div style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Tên khách hàng</label>
+                <input type="text" name="customer_name" class="form-input-premium" required>
+            </div>
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Số điện thoại</label>
+                <input type="text" name="customer_phone" class="form-input-premium" required>
+            </div>
+        </div>
+
+        <!-- Device Info -->
+        <div class="form-group">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Tên thiết bị</label>
+            <input type="text" name="device_name" class="form-input-premium" placeholder="VD: iPhone 13 Pro Max" required>
+        </div>
+        <div class="form-group">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">IMEI / Serial</label>
+            <input type="text" name="device_imei" class="form-input-premium">
+        </div>
+
+        <!-- Services & Parts -->
+        <div style="grid-column: span 2;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Linh kiện & Dịch vụ</label>
+            <div style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <% products.forEach(p => { %>
+                    <label style="display: flex; align-items: center; gap: 1rem; cursor: pointer;">
+                        <input type="checkbox" name="services" value="<%= p._id %>" style="width: 18px; height: 18px; accent-color: var(--primary);">
+                        <span><%= p.title %> - <small style="color: var(--primary-light);"><%= formatCurrency(p.price) %></small></span>
+                    </label>
+                <% }) %>
+            </div>
+        </div>
+
+        <div style="grid-column: span 2;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Ghi chú</label>
+            <textarea name="note" class="form-input-premium" rows="3" placeholder="Tình trạng thiết bị, mật khẩu..."></textarea>
+        </div>
+
+        <div style="grid-column: span 2; display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" class="btn-premium" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-light);" onclick="history.back()">Hủy</button>
+            <button type="submit" class="btn-premium">Lập phiếu <i class="fas fa-check"></i></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const services = formData.getAll('services');
+        const data = Object.fromEntries(formData.entries());
+        data.services = services;
+
+        try {
+            const response = await fetch('/api/v1/repair-tickets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                alert('Lập phiếu thành công!');
+                window.location.href = '/admin/repair-tickets';
+            } else {
+                const errData = await response.json();
+                alert(errData.message || 'Có lỗi xảy ra');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+</script>
+
+<%- include('../../layouts/footer') %>

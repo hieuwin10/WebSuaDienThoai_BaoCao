@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký | PhoneRepair Pro</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body class="animate-fade">
+    <div class="auth-container">
+        <div class="glass" style="padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl);">
+            <h2 style="margin-bottom: 0.5rem; font-weight: 700;">Tạo tài khoản</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.875rem;">Bắt đầu quản lý tiệm của bạn chuyên nghiệp hơn</p>
+            
+            <div id="alert" style="display: none;" class="alert alert-error"></div>
+            <div id="success" style="display: none;" class="alert alert-success"></div>
+
+            <form id="registerForm">
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">Tên đăng nhập</label>
+                    <input type="text" name="username" class="form-input-premium" placeholder="Nhập username" required>
+                </div>
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">Email</label>
+                    <input type="email" name="email" class="form-input-premium" placeholder="example@mail.com" required>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">Mật khẩu</label>
+                    <input type="password" name="password" class="form-input-premium" placeholder="Tối thiểu 8 ký tự..." required>
+                </div>
+                <button type="submit" class="btn-premium" style="width: 100%; justify-content: center;">
+                    Đăng ký tài khoản <i class="fas fa-user-plus"></i>
+                </button>
+            </form>
+
+            <div style="margin-top: 2rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
+                Đã có tài khoản? <a href="/auth/login" style="color: var(--primary-light); text-decoration: none; font-weight: 600;">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const alert = document.getElementById('alert');
+            const success = document.getElementById('success');
+
+            try {
+                const response = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    success.style.display = 'block';
+                    success.textContent = 'Đăng ký thành công! Đang chuyển hướng...';
+                    setTimeout(() => window.location.href = '/auth/login', 1500);
+                } else {
+                    alert.style.display = 'block';
+                    alert.textContent = Array.isArray(result) ? Object.values(result[0])[0] : (result.message || 'Đăng ký thất bại');
+                }
+            } catch (err) {
+                alert.style.display = 'block';
+                alert.textContent = 'Lỗi kết nối máy chủ';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -4,8 +4,9 @@ import { Plus, Edit, Trash2, Smartphone, Search, RefreshCcw } from 'lucide-react
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
+import { getApiErrorMessage } from '../../utils/apiError';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const DevicePage = () => {
   const [devices, setDevices] = useState([]);
@@ -14,7 +15,7 @@ const DevicePage = () => {
   const [editingDevice, setEditingDevice] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
-  const { user } = useAuth();
+  const { user, isStaff } = useAuth();
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -49,13 +50,13 @@ const DevicePage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xoá thiết bị này?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa thiết bị này?')) {
       try {
         await api.delete(`/devices/${id}`);
-        toast.success('Xoá thiết bị thành công');
+        toast.success('Xóa thiết bị thành công');
         fetchDevices();
       } catch {
-        toast.error('Lỗi khi xoá thiết bị');
+        toast.error('Lỗi khi xóa thiết bị');
       }
     }
   };
@@ -79,7 +80,7 @@ const DevicePage = () => {
       setIsModalVisible(false);
       fetchDevices();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(getApiErrorMessage(err, 'Có lỗi xảy ra. Vui lòng thử lại.'));
     }
   };
 
@@ -94,14 +95,14 @@ const DevicePage = () => {
     {
       title: 'Tên thiết bị',
       key: 'model_name',
-      render: (_, record) => record.model_name || record.device_name || 'N/A',
+      render: (_, record) => record.model_name || record.device_name || 'Không có',
       sorter: (a, b) => String(a.model_name || '').localeCompare(String(b.model_name || '')),
     },
     {
       title: 'IMEI',
       dataIndex: 'imei',
       key: 'imei',
-      render: (text) => <code style={{ color: '#1890ff' }}>{text}</code>,
+      render: (text) => <code>{text}</code>,
     },
     {
       title: 'Nhà sản xuất',
@@ -113,20 +114,18 @@ const DevicePage = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              icon={<Edit size={16} />}
-              onClick={() => handleEdit(record)}
-              type="text"
-            />
-          </Tooltip>
+          {isStaff ? (
+            <Tooltip title="Chỉnh sửa">
+              <Button icon={<Edit size={16} />} onClick={() => handleEdit(record)} type="link" />
+            </Tooltip>
+          ) : null}
           {user?.role?.name === 'ADMIN' && (
-            <Tooltip title="Xoá">
+            <Tooltip title="Xóa">
               <Button
                 icon={<Trash2 size={16} />}
                 onClick={() => handleDelete(record._id)}
                 danger
-                type="text"
+                type="link"
               />
             </Tooltip>
           )}
@@ -136,31 +135,46 @@ const DevicePage = () => {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={3}>Quản lý Thiết bị</Title>
-        <Space>
+    <div className="page-root">
+      <header className="page-header">
+        <div>
+          <Title level={3} className="page-header__title">
+            {isStaff ? 'Quản lý thiết bị' : 'Thiết bị của tôi'}
+          </Title>
+          <p className="page-header__lead">
+            {isStaff
+              ? 'Danh sách máy khách — tìm nhanh theo IMEI hoặc model.'
+              : 'Đăng ký máy của bạn để tạo phiếu sửa chữa và tra cứu bảo hành.'}
+          </p>
+        </div>
+        <div className="page-toolbar">
           <Input
-            placeholder="Tìm kiếm theo IMEI hoặc model..."
-            prefix={<Search size={16} />}
+            allowClear
+            placeholder="Tìm theo IMEI hoặc model..."
+            prefix={<Search size={16} style={{ color: 'rgba(15,23,42,0.35)' }} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
+            style={{ width: 280 }}
           />
-          <Button icon={<RefreshCcw size={16} />} onClick={fetchDevices} />
+          <Button icon={<RefreshCcw size={16} />} onClick={fetchDevices}>
+            Làm mới
+          </Button>
           <Button type="primary" icon={<Plus size={16} />} onClick={handleAdd}>
             Thêm thiết bị
           </Button>
-        </Space>
-      </div>
+        </div>
+      </header>
 
-      <Card>
+      <Card className="surface-card" bordered={false}>
+        <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+          {filteredDevices.length} / {devices.length} thiết bị hiển thị
+        </Text>
         <Table
           columns={columns}
           dataSource={filteredDevices}
           rowKey="_id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, showSizeChanger: true }}
         />
       </Card>
 
@@ -170,6 +184,8 @@ const DevicePage = () => {
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
         width={600}
+        okText="Lưu"
+        cancelText="Hủy"
       >
         <Form form={form} onFinish={onFinish} layout="vertical">
           <Form.Item name="model_name" label="Model thiết bị" rules={[{ required: true, message: 'Vui lòng nhập model thiết bị' }]}>

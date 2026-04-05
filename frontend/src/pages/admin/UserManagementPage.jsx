@@ -80,7 +80,7 @@ const UserManagementPage = () => {
       dataIndex: 'role',
       key: 'role',
       render: (role) => {
-        const roleName = typeof role === 'object' ? role?.name : roles.find((r) => r._id === role)?.name || 'N/A';
+        const roleName = typeof role === 'object' ? role?.name : roles.find((r) => r._id === role)?.name || 'Không có';
         let color = 'blue';
         if (roleName === 'ADMIN') color = 'volcano';
         if (roleName === 'TECHNICIAN') color = 'green';
@@ -99,18 +99,14 @@ const UserManagementPage = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button
-            icon={<Edit size={16} />}
-            onClick={() => handleEdit(record)}
-            type="text"
-          >
+          <Button icon={<Edit size={16} />} onClick={() => handleEdit(record)} type="link">
             Sửa quyền
           </Button>
           <Button
             icon={record.lockTime ? <Unlock size={16} /> : <Lock size={16} />}
             onClick={() => handleToggleLock(record)}
             danger={!record.lockTime}
-            type="text"
+            type="link"
           >
             {record.lockTime ? 'Mở khóa' : 'Khóa'}
           </Button>
@@ -120,19 +116,28 @@ const UserManagementPage = () => {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={3}>Quản lý Người dùng</Title>
-        <Button icon={<RefreshCcw size={16} />} onClick={fetchData} loading={loading}>Làm mới</Button>
-      </div>
+    <div className="page-root">
+      <header className="page-header">
+        <div>
+          <Title level={3} className="page-header__title">
+            Quản lý người dùng
+          </Title>
+          <p className="page-header__lead">Gán vai trò, khóa hoặc mở khóa tài khoản trong hệ thống.</p>
+        </div>
+        <div className="page-toolbar">
+          <Button icon={<RefreshCcw size={16} />} onClick={fetchData} loading={loading}>
+            Làm mới
+          </Button>
+        </div>
+      </header>
 
-      <Card>
+      <Card className="surface-card" bordered={false}>
         <Table
           columns={columns}
           dataSource={users}
           rowKey="_id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, showSizeChanger: true }}
         />
       </Card>
 
@@ -141,10 +146,12 @@ const UserManagementPage = () => {
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
+        okText="Lưu"
+        cancelText="Hủy"
       >
         <Form form={form} onFinish={handleUpdateRole} layout="vertical">
           <Form.Item name="role" label="Vai trò mới" rules={[{ required: true }]}>
-            <Select>
+            <Select placeholder="Chọn vai trò">
               {roles.map((role) => (
                 <Select.Option key={role._id} value={role._id}>{role.name}</Select.Option>
               ))}

@@ -2,10 +2,11 @@
 import { Table, Button, Space, Modal, Form, Input, Card, Typography, Tabs, InputNumber, Tag } from 'antd';
 import { Plus, Edit, Trash2, Package, Hammer, RefreshCcw } from 'lucide-react';
 import api from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const ServiceManagementPage = () => {
   const [services, setServices] = useState([]);
@@ -56,14 +57,14 @@ const ServiceManagementPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xoá mục này?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa mục này?')) {
       try {
         const endpoint = activeTab === 'services' ? '/services' : '/components';
         await api.delete(`${endpoint}/${id}`);
-        toast.success('Xoá thành công');
+        toast.success('Xóa thành công');
         fetchData();
       } catch {
-        toast.error('Lỗi khi xoá dữ liệu');
+        toast.error('Lỗi khi xóa dữ liệu');
       }
     }
   };
@@ -94,7 +95,7 @@ const ServiceManagementPage = () => {
       setIsModalVisible(false);
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(getApiErrorMessage(err, 'Có lỗi xảy ra. Vui lòng thử lại.'));
     }
   };
 
@@ -112,9 +113,9 @@ const ServiceManagementPage = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button icon={<Edit size={16} />} onClick={() => handleEdit(record)} type="text" />
+          <Button icon={<Edit size={16} />} onClick={() => handleEdit(record)} type="link" />
           {user?.role?.name === 'ADMIN' && (
-            <Button icon={<Trash2 size={16} />} onClick={() => handleDelete(record._id)} danger type="text" />
+            <Button icon={<Trash2 size={16} />} onClick={() => handleDelete(record._id)} danger type="link" />
           )}
         </Space>
       ),
@@ -143,9 +144,9 @@ const ServiceManagementPage = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button icon={<Edit size={16} />} onClick={() => handleEdit(record)} type="text" />
+          <Button icon={<Edit size={16} />} onClick={() => handleEdit(record)} type="link" />
           {user?.role?.name === 'ADMIN' && (
-            <Button icon={<Trash2 size={16} />} onClick={() => handleDelete(record._id)} danger type="text" />
+            <Button icon={<Trash2 size={16} />} onClick={() => handleDelete(record._id)} danger type="link" />
           )}
         </Space>
       ),
@@ -156,8 +157,8 @@ const ServiceManagementPage = () => {
     {
       key: 'services',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Hammer size={16} /> Danh mục Dịch vụ
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Hammer size={16} /> Danh mục dịch vụ
         </span>
       ),
       children: (
@@ -166,15 +167,15 @@ const ServiceManagementPage = () => {
           dataSource={services}
           rowKey="_id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, showSizeChanger: true }}
         />
       ),
     },
     {
       key: 'components',
       label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Package size={16} /> Kho Linh kiện
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Package size={16} /> Kho linh kiện
         </span>
       ),
       children: (
@@ -183,30 +184,36 @@ const ServiceManagementPage = () => {
           dataSource={components}
           rowKey="_id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, showSizeChanger: true }}
         />
       ),
     },
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={3}>Quản lý Cửa hàng</Title>
-        <Space>
-          <Button icon={<RefreshCcw size={16} />} onClick={fetchData} />
+    <div className="page-root">
+      <header className="page-header">
+        <div>
+          <Title level={3} className="page-header__title">
+            Dịch vụ &amp; linh kiện
+          </Title>
+          <p className="page-header__lead">Quản lý bảng giá dịch vụ và tồn kho linh kiện thay thế.</p>
+        </div>
+        <div className="page-toolbar">
+          <Button icon={<RefreshCcw size={16} />} onClick={fetchData}>
+            Làm mới
+          </Button>
           <Button type="primary" icon={<Plus size={16} />} onClick={handleAdd}>
             Thêm {activeTab === 'services' ? 'dịch vụ' : 'linh kiện'}
           </Button>
-        </Space>
-      </div>
+        </div>
+      </header>
 
-      <Card>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={items}
-        />
+      <Card className="surface-card" bordered={false}>
+        <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+          Chuyển tab để chỉnh sửa từng loại danh mục.
+        </Text>
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
       </Card>
 
       <Modal
@@ -214,6 +221,8 @@ const ServiceManagementPage = () => {
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
+        okText="Lưu"
+        cancelText="Hủy"
       >
         <Form form={form} onFinish={onFinish} layout="vertical">
           <Form.Item name="name" label="Tên" rules={[{ required: true }]}>
@@ -221,7 +230,7 @@ const ServiceManagementPage = () => {
           </Form.Item>
           {activeTab === 'services' && (
             <Form.Item name="description" label="Mô tả">
-              <Input.TextArea />
+              <Input.TextArea rows={3} />
             </Form.Item>
           )}
           {activeTab === 'components' && (

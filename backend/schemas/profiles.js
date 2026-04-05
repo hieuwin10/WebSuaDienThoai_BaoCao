@@ -22,7 +22,11 @@ const profileSchema = new mongoose.Schema({
   avatar: {
     type: String,
     default: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg'
-  }
+  },
+  cover_image: {
+    type: String,
+    default: null,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('profile', profileSchema);

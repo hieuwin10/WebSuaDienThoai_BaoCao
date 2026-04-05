@@ -1,8 +1,15 @@
 const deviceModel = require('../schemas/devices');
+const { isStaff: isStaffUser } = require('../utils/roleUtils');
 
 module.exports = {
   createDevice: async (data) => {
     return await deviceModel.create(data);
+  },
+  getDevicesForActor: async (user) => {
+    if (isStaffUser(user)) {
+      return await deviceModel.find().populate('customer_id');
+    }
+    return await deviceModel.find({ customer_id: user._id }).populate('customer_id');
   },
   getAllDevices: async () => {
     return await deviceModel.find().populate('customer_id');

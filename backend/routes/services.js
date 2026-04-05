@@ -24,8 +24,8 @@ router.get('/:id', CheckLogin, async (req, res) => {
   }
 });
 
-// POST /api/v1/services
-router.post('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
+// POST /api/v1/services — chỉ ADMIN/MODERATOR (khách USER không tạo/sửa danh mục)
+router.post('/', CheckLogin, checkRole('ADMIN', 'MODERATOR'), async (req, res) => {
   try {
     const service = await serviceController.createService(req.body);
     res.json(service);
@@ -35,7 +35,7 @@ router.post('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
 });
 
 // PUT /api/v1/services/:id
-router.put('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
+router.put('/:id', CheckLogin, checkRole('ADMIN', 'MODERATOR'), async (req, res) => {
   try {
     const service = await serviceController.updateService(req.params.id, req.body);
     if (!service) return res.status(404).json({ message: 'Không tìm thấy dịch vụ' });
@@ -50,7 +50,7 @@ router.delete('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const service = await serviceController.deleteService(req.params.id);
     if (!service) return res.status(404).json({ message: 'Không tìm thấy dịch vụ' });
-    res.json({ message: 'Xoá dịch vụ thành công', service });
+    res.json({ message: 'Xóa dịch vụ thành công.', service });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

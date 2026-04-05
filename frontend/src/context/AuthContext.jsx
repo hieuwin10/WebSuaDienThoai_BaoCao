@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import api from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const AuthContext = createContext();
 
@@ -53,8 +54,11 @@ export const AuthProvider = ({ children }) => {
       const loginResponse = await api.post('/auth/login', { username, password });
       const token = getTokenFromLoginResponse(loginResponse.data);
       if (!token) {
-        return { success: false, message: 'Khong lay duoc token dang nhap' };
+        return { success: false, message: 'Không lấy được mã đăng nhập từ máy chủ.' };
       }
+
+      // Gắn token trước khi gọi /auth/me — interceptor axios chỉ đọc từ localStorage
+      localStorage.setItem('token', token);
 
       const userResponse = await api.get('/auth/me');
       const profile = userResponse.data;
@@ -64,12 +68,40 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (err) {
+      localStorage.removeItem('token');
       return {
         success: false,
-        message: err.response?.data?.message || 'Dang nhap that bai',
+        message: getApiErrorMessage(
+          err,
+          'Đăng nhập thất bại. Vui lòng kiểm tra tên đăng nhập và mật khẩu.'
+        ),
       };
     }
   };
+
+  /** Đồng bộ user trong layout/header sau khi đổi ảnh hồ sơ, v.v. */
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const userResponse = await api.get('/auth/me');
+      const nextUser = userResponse.data;
+      saveAuthStorage(token, nextUser);
+      setUser(nextUser);
+    } catch {
+      /* giữ user cũ nếu /me lỗi tạm thời */
+    }
+  }, []);
+
+  // Phiên bản cũ lưu user không có profile — gọi /me một lần để có avatar header
+  useEffect(() => {
+    if (loading || !user) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    if (!Object.prototype.hasOwnProperty.call(user, 'profile')) {
+      refreshUser();
+    }
+  }, [loading, user, refreshUser]);
 
   const logout = async () => {
     try {
@@ -82,12 +114,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isStaff = roleName === 'ADMIN' || roleName === 'MODERATOR';
+
   const authValue = {
     user,
     loading,
     login,
     logout,
-    isAdmin: user?.role?.name === 'ADMIN',
+    refreshUser,
+    isAdmin: user?.role?.name === 'ADMIN' || roleName === 'ADMIN',
+    isStaff,
   };
 
   return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;

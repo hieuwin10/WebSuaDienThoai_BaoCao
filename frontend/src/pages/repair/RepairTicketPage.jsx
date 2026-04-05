@@ -1,14 +1,16 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Card, Typography, Tag, Input, Select } from 'antd';
-import { Plus, Eye, Search, RefreshCcw } from 'lucide-react';
+import { Plus, Eye, Search, RefreshCcw, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 import dayjs from 'dayjs';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const RepairTicketPage = () => {
+  const { isStaff } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -62,17 +64,17 @@ const RepairTicketPage = () => {
     {
       title: 'Mã phiếu',
       key: 'ticket_code',
-      render: (_, record) => <code style={{ fontSize: '12px' }}>{record.ticket_code || record._id.slice(-6).toUpperCase()}</code>,
+      render: (_, record) => <code>{record.ticket_code || record._id.slice(-6).toUpperCase()}</code>,
     },
     {
       title: 'Thiết bị',
       key: 'device',
-      render: (_, record) => record.device_id?.model_name || 'N/A',
+      render: (_, record) => record.device_id?.model_name || 'Không có',
     },
     {
       title: 'IMEI',
       key: 'imei',
-      render: (_, record) => record.device_id?.imei || 'N/A',
+      render: (_, record) => record.device_id?.imei || 'Không có',
     },
     {
       title: 'Trạng thái',
@@ -91,7 +93,7 @@ const RepairTicketPage = () => {
       title: 'Tổng tiền',
       dataIndex: 'total_cost',
       key: 'total_cost',
-      render: (price) => <span style={{ fontWeight: 'bold' }}>{(price || 0).toLocaleString()}đ</span>,
+      render: (price) => <strong style={{ color: '#0f172a' }}>{(price || 0).toLocaleString()}đ</strong>,
     },
     {
       title: 'Hành động',
@@ -110,21 +112,31 @@ const RepairTicketPage = () => {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={3}>Danh sách Phiếu sửa chữa</Title>
-        <Space>
+    <div className="page-root">
+      <header className="page-header">
+        <div>
+          <Title level={3} className="page-header__title">
+            {isStaff ? 'Phiếu sửa chữa' : 'Phiếu sửa chữa của tôi'}
+          </Title>
+          <p className="page-header__lead">
+            {isStaff
+              ? 'Lọc theo trạng thái, tìm nhanh theo mã phiếu hoặc thiết bị.'
+              : 'Theo dõi tiến độ sửa chữa các máy bạn đã đăng ký.'}
+          </p>
+        </div>
+        <div className="page-toolbar">
           <Input
-            placeholder="Tìm mã phiếu, thiết bị..."
-            prefix={<Search size={16} />}
+            allowClear
+            placeholder="Mã phiếu, thiết bị..."
+            prefix={<Search size={16} style={{ color: 'rgba(15,23,42,0.35)' }} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 250 }}
+            style={{ width: 220 }}
           />
           <Select
             value={statusFilter}
             onChange={setStatusFilter}
-            style={{ width: 180 }}
+            style={{ width: 190 }}
             options={[
               { value: 'ALL', label: 'Tất cả trạng thái' },
               { value: 'pending', label: 'Chờ xử lý' },
@@ -134,20 +146,28 @@ const RepairTicketPage = () => {
               { value: 'ready_for_pickup', label: 'Chờ nhận máy' },
             ]}
           />
-          <Button icon={<RefreshCcw size={16} />} onClick={fetchTickets} />
+          <Button icon={<RefreshCcw size={16} />} onClick={fetchTickets}>
+            Làm mới
+          </Button>
           <Button type="primary" icon={<Plus size={16} />} onClick={() => navigate('/repair-tickets/create')}>
             Tạo phiếu mới
           </Button>
-        </Space>
-      </div>
+        </div>
+      </header>
 
-      <Card>
+      <Card className="surface-card" bordered={false}>
+        <Space align="center" style={{ marginBottom: 12 }} wrap>
+          <ClipboardList size={18} style={{ color: '#0d9488' }} />
+          <Text type="secondary">
+            {filteredTickets.length} / {tickets.length} phiếu
+          </Text>
+        </Space>
         <Table
           columns={columns}
           dataSource={filteredTickets}
           rowKey="_id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, showSizeChanger: true }}
         />
       </Card>
     </div>

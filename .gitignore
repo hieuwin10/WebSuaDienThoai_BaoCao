@@ -4,45 +4,22 @@
 # Build outputs
 frontend/dist/
 backend/public/build/
-coverage/
 
 # Environment
 **/.env
 **/.env.*
-!.env.example
 
 # Logs
-logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
-
-# Runtime files
-backend/uploads/
-pids/
-*.pid
-*.pid.lock
-*.seed
 
 # OS / Editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-.vscode-test/
 
-# Caches
-.npm/
-.nyc_output/
-.eslintcache
-.stylelintcache
-.cache/
-.parcel-cache/
-.svelte-kit/
-.docusaurus/
-
-# Misc
-*.tgz
-*.tsbuildinfo
+# Runtime files
+backend/uploads/

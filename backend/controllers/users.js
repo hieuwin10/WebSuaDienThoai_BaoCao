@@ -14,7 +14,11 @@ module.exports = {
             role: role,
             loginCount: loginCount
         });
-        await newItem.save({ session });
+        if (session) {
+            await newItem.save({ session });
+        } else {
+            await newItem.save();
+        }
         return newItem;
     },
     GetAllUser: async function () {

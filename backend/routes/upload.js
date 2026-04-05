@@ -6,7 +6,7 @@ let path = require('path');
 // Route để upload một ảnh
 router.post('/one_image', uploadImage.single('file'), function (req, res, next) {
     if (!req.file) {
-        res.status(404).send({ message: "file not found" });
+        res.status(404).json({ message: 'Không tìm thấy tệp được tải lên.' });
     } else {
         res.send({
             filename: req.file.filename,

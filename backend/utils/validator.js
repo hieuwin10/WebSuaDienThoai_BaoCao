@@ -16,40 +16,40 @@ module.exports = {
         next();
     },
     CreateAnUserValidator: [
-        body('email').notEmpty().withMessage("email khong duoc de trong").bail().isEmail().withMessage("email sai dinh dang").normalizeEmail(),
-        body('username').notEmpty().withMessage("username khong duoc de trong").bail().isAlphanumeric().withMessage("username khong duoc chua ki tu dac biet"),
-        body('password').notEmpty().withMessage("password khong duoc de trong").bail().isStrongPassword({
+        body('email').notEmpty().withMessage('Email không được để trống.').bail().isEmail().withMessage('Email không đúng định dạng.').normalizeEmail(),
+        body('username').notEmpty().withMessage('Tên đăng nhập không được để trống.').bail().isAlphanumeric().withMessage('Tên đăng nhập chỉ gồm chữ và số, không dùng ký tự đặc biệt.'),
+        body('password').notEmpty().withMessage('Mật khẩu không được để trống.').bail().isStrongPassword({
             minLength: 8,
             minLowercase: 1,
             minNumbers: 1,
             minSymbols: 1,
             minUppercase: 1
-        }).withMessage("password phai co it nhat 8 ki tu trong do co it nhat 1 ki tu chu hoa, 1 ki tu chu thuong,1 ki tu so va 1 ki tu dac biet"),
-        body('role').notEmpty().withMessage("role khong duoc de trong").bail().isMongoId().withMessage("role phai la ID"),
+        }).withMessage('Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'),
+        body('role').notEmpty().withMessage('Vai trò không được để trống.').bail().isMongoId().withMessage('Vai trò phải là mã ID hợp lệ.'),
     ],
     RegisterValidator: [
-        body('email').notEmpty().withMessage("email khong duoc de trong").bail().isEmail().withMessage("email sai dinh dang").normalizeEmail(),
-        body('username').notEmpty().withMessage("username khong duoc de trong").bail().isAlphanumeric().withMessage("username khong duoc chua ki tu dac biet"),
-        body('password').notEmpty().withMessage("password khong duoc de trong").bail().isStrongPassword({
+        body('email').notEmpty().withMessage('Email không được để trống.').bail().isEmail().withMessage('Email không đúng định dạng.').normalizeEmail(),
+        body('username').notEmpty().withMessage('Tên đăng nhập không được để trống.').bail().isAlphanumeric().withMessage('Tên đăng nhập chỉ gồm chữ và số, không dùng ký tự đặc biệt.'),
+        body('password').notEmpty().withMessage('Mật khẩu không được để trống.').bail().isStrongPassword({
             minLength: 8,
             minLowercase: 1,
             minNumbers: 1,
             minSymbols: 1,
             minUppercase: 1
-        }).withMessage("password phai co it nhat 8 ki tu trong do co it nhat 1 ki tu chu hoa, 1 ki tu chu thuong,1 ki tu so va 1 ki tu dac biet"),
+        }).withMessage('Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'),
     ],
     ChangePasswordValidator: [
-        body('oldpassword').notEmpty().withMessage("password khong duoc de trong"),
-        body('newpassword').notEmpty().withMessage("password khong duoc de trong").bail().isStrongPassword({
+        body('oldpassword').notEmpty().withMessage('Mật khẩu hiện tại không được để trống.'),
+        body('newpassword').notEmpty().withMessage('Mật khẩu mới không được để trống.').bail().isStrongPassword({
             minLength: 8,
             minLowercase: 1,
             minNumbers: 1,
             minSymbols: 1,
             minUppercase: 1
-        }).withMessage("password phai co it nhat 8 ki tu trong do co it nhat 1 ki tu chu hoa, 1 ki tu chu thuong,1 ki tu so va 1 ki tu dac biet"),
+        }).withMessage('Mật khẩu mới tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'),
     ],
     ForgotPasswordValidator: [
-        body('email').notEmpty().withMessage("email khong duoc de trong").bail().isEmail().withMessage("email sai dinh dang"),
+        body('email').notEmpty().withMessage('Email không được để trống.').bail().isEmail().withMessage('Email không đúng định dạng.'),
     ],
     ModifyAnUserValidator: [
         body('password').optional().isStrongPassword({
@@ -58,6 +58,6 @@ module.exports = {
             minNumbers: 1,
             minSymbols: 1,
             minUppercase: 1
-        }).withMessage("password phai co it nhat 8 ki tu trong do co it nhat 1 ki tu chu hoa, 1 ki tu chu thuong,1 ki tu so va 1 ki tu dac biet"),
+        }).withMessage('Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.'),
     ]
 }

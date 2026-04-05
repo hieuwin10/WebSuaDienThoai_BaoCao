@@ -53,8 +53,13 @@ module.exports = {
       });
     }
 
-    profile.avatar = imageUrl;
+    const t = String(type || 'avatar').toLowerCase();
+    if (t === 'cover') {
+      profile.cover_image = imageUrl;
+    } else {
+      profile.avatar = imageUrl;
+    }
     await profile.save();
-    return profile;
+    return await profileModel.findById(profile._id).populate('user_id', 'username email fullName role');
   }
 };

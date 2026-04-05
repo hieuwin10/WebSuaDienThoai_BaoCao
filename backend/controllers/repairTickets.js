@@ -1,9 +1,51 @@
 const repairTicketModel = require('../schemas/repairTickets');
 const componentModel = require('../schemas/components');
 const warrantyModel = require('../schemas/warranty');
-const mongoose = require('mongoose');
+const deviceModel = require('../schemas/devices');
+const { isStaff: isStaffUser } = require('../utils/roleUtils');
+
+const TICKET_POPULATE = [
+  {
+    path: 'device_id',
+    populate: { path: 'customer_id', select: 'username email fullName' },
+  },
+  { path: 'services' },
+  { path: 'technician_id', select: 'username email fullName' },
+  { path: 'components_used.component_id' },
+];
+
+function buildTicketQuery(filter) {
+  let q = repairTicketModel.find(filter);
+  for (const p of TICKET_POPULATE) {
+    q = q.populate(p);
+  }
+  return q;
+}
+
+function getDeviceOwnerId(deviceDoc) {
+  if (!deviceDoc) return null;
+  const c = deviceDoc.customer_id;
+  if (!c) return null;
+  return c._id ? String(c._id) : String(c);
+}
 
 module.exports = {
+  /** Khách chỉ xem phiếu gắn thiết bị của chính họ */
+  assertUserCanViewTicket(user, ticketDoc) {
+    if (!ticketDoc) return false;
+    if (isStaffUser(user)) return true;
+    const ownerId = getDeviceOwnerId(ticketDoc.device_id);
+    return ownerId && ownerId === String(user._id);
+  },
+
+  getTicketsForActor: async (user) => {
+    if (isStaffUser(user)) {
+      return buildTicketQuery({}).exec();
+    }
+    const deviceIds = await deviceModel.find({ customer_id: user._id }).distinct('_id');
+    if (!deviceIds.length) return [];
+    return buildTicketQuery({ device_id: { $in: deviceIds } }).exec();
+  },
   createTicket: async (data) => {
     let newTicket = new repairTicketModel(data);
     await newTicket.save();
@@ -30,18 +72,14 @@ module.exports = {
     return newTicket;
   },
   getAllTickets: async () => {
-    return await repairTicketModel.find()
-      .populate('device_id')
-      .populate('services')
-      .populate('technician_id', 'username email fullName')
-      .populate('components_used.component_id');
+    return buildTicketQuery({}).exec();
   },
   getTicketById: async (id) => {
-    return await repairTicketModel.findById(id)
-      .populate('device_id')
-      .populate('services')
-      .populate('technician_id', 'username email fullName')
-      .populate('components_used.component_id');
+    let q = repairTicketModel.findOne({ _id: id });
+    for (const p of TICKET_POPULATE) {
+      q = q.populate(p);
+    }
+    return q.exec();
   },
   updateTicket: async (id, data) => {
     return await repairTicketModel.findByIdAndUpdate(id, data, { new: true });

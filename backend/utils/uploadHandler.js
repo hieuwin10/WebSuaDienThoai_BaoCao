@@ -23,7 +23,7 @@ let filterImage = function (req, file, cb) {
     if (file.mimetype.startsWith('image')) {
         cb(null, true)
     } else {
-        cb(new Error("file khong dung dinh dang"))
+        cb(new Error('Tệp không đúng định dạng ảnh.'))
     }
 }
 
@@ -31,7 +31,7 @@ let filterExel = function (req, file, cb) {
     if (file.mimetype.includes('spreadsheetml') || file.mimetype.includes('excel')) {
         cb(null, true)
     } else {
-        cb(new Error("file khong dung dinh dang"))
+        cb(new Error('Tệp không đúng định dạng bảng tính.'))
     }
 }
 

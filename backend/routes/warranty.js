@@ -7,7 +7,7 @@ const { CheckLogin, checkRole } = require('../utils/authHandler');
 // GET /api/v1/warranty
 router.get('/', CheckLogin, async (req, res) => {
   try {
-    const warranties = await warrantyController.getAllWarranties();
+    const warranties = await warrantyController.getWarrantiesForActor(req.user);
     res.json(warranties);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -17,12 +17,17 @@ router.get('/', CheckLogin, async (req, res) => {
 // GET /api/v1/warranty/search
 router.get('/search', CheckLogin, async (req, res) => {
   try {
-    const q = req.query.q;
-    // For simple search, find tickets first then warranties
-    const tickets = await repairTicketController.getAllTickets(); // Use a better query in production
-    const matchedTicketIds = tickets.filter(t => 
-        t.ticket_code.includes(q) || t.device_id?.brand.includes(q)
-    ).map(t => t._id);
+    const q = (req.query.q || '').trim();
+    if (!q) return res.json([]);
+
+    const tickets = await repairTicketController.getTicketsForActor(req.user);
+    const matchedTicketIds = tickets
+      .filter((t) => {
+        const code = String(t.ticket_code || '');
+        const brand = String(t.device_id?.brand || '');
+        return code.includes(q) || brand.includes(q);
+      })
+      .map((t) => t._id);
 
     const result = await warrantyController.searchByTicket(matchedTicketIds);
     res.json(result);
@@ -36,9 +41,13 @@ router.get('/:id', CheckLogin, async (req, res) => {
   try {
     const warranty = await warrantyController.getWarrantyById(req.params.id);
     if (!warranty) return res.status(404).json({ message: 'Không tìm thấy bảo hành' });
+    const ticket = warranty.ticket;
+    if (!repairTicketController.assertUserCanViewTicket(req.user, ticket)) {
+      return res.status(403).json({ message: 'Bạn không có quyền xem bản ghi bảo hành này' });
+    }
     res.json(warranty);
   } catch (err) {
-    res.status(404).send('ID không hợp lệ');
+    res.status(404).json({ message: 'Mã bảo hành không hợp lệ.' });
   }
 });
 
@@ -68,7 +77,7 @@ router.delete('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const deleted = await warrantyController.deleteWarranty(req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Không tìm thấy bảo hành' });
-    res.json({ message: 'Xoá bảo hành thành công', warranty: deleted });
+    res.json({ message: 'Xóa bảo hành thành công.', warranty: deleted });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

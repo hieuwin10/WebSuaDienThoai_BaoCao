@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www"
+    "dev": "nodemon ./bin/www",
+    "seed:demo": "node ./scripts/seed-demo.js",
+    "seed:demo:reset": "node ./scripts/seed-demo.js --reset"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

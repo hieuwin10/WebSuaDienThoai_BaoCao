@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, Divider } from 'antd';
-import { User, Lock } from 'lucide-react';
+import { User, Lock, Sparkles } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -21,64 +21,78 @@ const LoginPage = () => {
       toast.success('Đăng nhập thành công');
       navigate('/');
     } else {
-      toast.error(result.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      toast.error(
+        result.message ||
+          'Đăng nhập thất bại. Vui lòng kiểm tra tên đăng nhập và mật khẩu.'
+      );
     }
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: '#f0f2f5',
-      }}
-    >
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={2} style={{ color: '#1890ff', margin: 0 }}>Phone Repair</Title>
-          <Text type="secondary">Đăng nhập để quản lý cửa hàng của bạn</Text>
-        </div>
-
-        <Form
-          name="login_form"
-          initialValues={{ remember: true }}
-          onFinish={onFinish}
-          layout="vertical"
-          size="large"
-        >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập' }]}
-          >
-            <Input prefix={<User size={18} style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="Tên đăng nhập" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
-          >
-            <Input.Password
-              prefix={<Lock size={18} style={{ color: 'rgba(0,0,0,.25)' }} />}
-              placeholder="Mật khẩu"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
-              Đăng nhập
-            </Button>
-          </Form.Item>
-
-          <Divider plain><Text type="secondary">Hoặc</Text></Divider>
-
-          <div style={{ textAlign: 'center' }}>
-            <Text>Chưa có tài khoản? </Text>
-            <Link to="/register">Đăng ký ngay</Link>
+    <div className="auth-page">
+      <div className="auth-hero">
+        <div className="auth-hero__inner">
+          <div className="auth-hero__badge">
+            <Sparkles size={14} />
+            Hệ thống quản lý xưởng
           </div>
-        </Form>
-      </Card>
+          <h1>Phone Repair</h1>
+          <p>
+            Theo dõi phiếu sửa chữa, thiết bị, kho linh kiện và bảo hành — mọi thứ gọn trong một bảng điều khiển
+            hiện đại.
+          </p>
+        </div>
+      </div>
+      <div className="auth-panel">
+        <Card className="auth-card" bordered={false}>
+          <div className="auth-card__logo">PR</div>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <Title level={3} style={{ margin: 0, letterSpacing: '-0.03em' }}>
+              Đăng nhập
+            </Title>
+            <Text type="secondary">Tiếp tục quản lý cửa hàng của bạn</Text>
+          </div>
+
+          <Form name="login_form" onFinish={onFinish} layout="vertical" size="large" requiredMark={false}>
+            <Form.Item
+              name="username"
+              rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập' }]}
+              label={<span style={{ fontWeight: 600 }}>Tên đăng nhập</span>}
+            >
+              <Input
+                prefix={<User size={18} style={{ color: 'rgba(15,23,42,0.35)' }} />}
+                placeholder="Nhập tên đăng nhập"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
+              label={<span style={{ fontWeight: 600 }}>Mật khẩu</span>}
+            >
+              <Input.Password
+                prefix={<Lock size={18} style={{ color: 'rgba(15,23,42,0.35)' }} />}
+                placeholder="••••••••"
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 12 }}>
+              <Button type="primary" htmlType="submit" loading={loading} block size="large">
+                Đăng nhập
+              </Button>
+            </Form.Item>
+
+            <Divider plain>
+              <Text type="secondary">Hoặc</Text>
+            </Divider>
+
+            <div style={{ textAlign: 'center' }}>
+              <Text type="secondary">Chưa có tài khoản? </Text>
+              <Link to="/register">Đăng ký ngay</Link>
+            </div>
+          </Form>
+        </Card>
+      </div>
     </div>
   );
 };

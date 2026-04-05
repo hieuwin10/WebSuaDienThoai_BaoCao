@@ -17,10 +17,10 @@ router.get('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
 router.get('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const role = await roleController.getRoleById(req.params.id);
-    if (!role) return res.status(404).json({ message: 'Không tìm thấy role' });
+    if (!role) return res.status(404).json({ message: 'Không tìm thấy vai trò.' });
     res.json(role);
   } catch (err) {
-    res.status(404).json({ message: 'ID không hợp lệ hoặc không tồn tại' });
+    res.status(404).json({ message: 'Mã vai trò không hợp lệ hoặc không tồn tại.' });
   }
 });
 
@@ -30,7 +30,7 @@ router.post('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
     const newRole = await roleController.createRole(req.body);
     res.status(201).json(newRole);
   } catch (err) {
-    if (err.code === 11000) return res.status(400).json({ message: 'Role đã tồn tại' });
+    if (err.code === 11000) return res.status(400).json({ message: 'Vai trò đã tồn tại.' });
     res.status(400).json({ message: err.message });
   }
 });
@@ -39,7 +39,7 @@ router.post('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
 router.put('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const updated = await roleController.updateRole(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: 'Không tìm thấy role' });
+    if (!updated) return res.status(404).json({ message: 'Không tìm thấy vai trò.' });
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -50,8 +50,8 @@ router.put('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
 router.delete('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const deleted = await roleController.deleteRole(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'Không tìm thấy role' });
-    res.json({ message: 'Xoá role thành công', role: deleted });
+    if (!deleted) return res.status(404).json({ message: 'Không tìm thấy vai trò.' });
+    res.json({ message: 'Xóa vai trò thành công.', role: deleted });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

@@ -1,9 +1,13 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const componentController = require('../controllers/components');
+// Middleware bả mật
 const { CheckLogin, checkRole } = require('../utils/authHandler');
 
-// GET /api/v1/components
+/**
+ * [GET] /api/v1/components
+ * Xem danh sách linh kiện trong kho (Nhân viên có thể xem).
+ */
 router.get('/', CheckLogin, async (req, res) => {
   try {
     const components = await componentController.getAllComponents();
@@ -13,7 +17,10 @@ router.get('/', CheckLogin, async (req, res) => {
   }
 });
 
-// GET /api/v1/components/:id
+/**
+ * [GET] /api/v1/components/:id
+ * Xem chi tiết thông số và giá của 1 loại linh kiện.
+ */
 router.get('/:id', CheckLogin, async (req, res) => {
   try {
     const component = await componentController.getComponentById(req.params.id);
@@ -24,7 +31,10 @@ router.get('/:id', CheckLogin, async (req, res) => {
   }
 });
 
-// POST /api/v1/components
+/**
+ * [POST] /api/v1/components
+ * Tạo linh kiện mới (Chỉ Admin mang quyền quản trị tối cao mới được tạo).
+ */
 router.post('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const component = await componentController.createComponent(req.body);
@@ -34,7 +44,10 @@ router.post('/', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
-// PUT /api/v1/components/:id
+/**
+ * [PUT] /api/v1/components/:id
+ * Cập nhật thông tin linh kiện.
+ */
 router.put('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const component = await componentController.updateComponent(req.params.id, req.body);
@@ -45,7 +58,10 @@ router.put('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
-// DELETE /api/v1/components/:id
+/**
+ * [DELETE] /api/v1/components/:id
+ * Xóa linh kiện khỏi kho dữ liệu.
+ */
 router.delete('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const component = await componentController.deleteComponent(req.params.id);
@@ -56,7 +72,10 @@ router.delete('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   }
 });
 
-// POST /api/v1/components/add-stock
+/**
+ * [POST] /api/v1/components/add-stock
+ * API Chuyên dụng để nhập hàng vào kho (Cộng thêm số lượng).
+ */
 router.post('/add-stock', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const { id, quantity } = req.body;
@@ -68,3 +87,4 @@ router.post('/add-stock', CheckLogin, checkRole('ADMIN'), async (req, res) => {
 });
 
 module.exports = router;
+

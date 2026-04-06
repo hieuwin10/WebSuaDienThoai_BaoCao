@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const serviceController = require('../controllers/services');
+// Middleware xác thực
 const { CheckLogin, checkRole } = require('../utils/authHandler');
 
-// GET /api/v1/services
+/**
+ * [GET] /api/v1/services
+ * Xem danh sách các dịch vụ đang cung cấp (Khách hàng cũng xem được).
+ */
 router.get('/', CheckLogin, async (req, res) => {
   try {
     const services = await serviceController.getAllServices();
@@ -13,7 +17,10 @@ router.get('/', CheckLogin, async (req, res) => {
   }
 });
 
-// GET /api/v1/services/:id
+/**
+ * [GET] /api/v1/services/:id
+ * Xem chi tiết thông số của 1 loại dịch vụ.
+ */
 router.get('/:id', CheckLogin, async (req, res) => {
   try {
     const service = await serviceController.getServiceById(req.params.id);
@@ -24,7 +31,10 @@ router.get('/:id', CheckLogin, async (req, res) => {
   }
 });
 
-// POST /api/v1/services — chỉ ADMIN/MODERATOR (khách USER không tạo/sửa danh mục)
+/**
+ * [POST] /api/v1/services
+ * Thêm một dịch vụ mới vào quán (Chỉ Admin/Mod được quyền thay đổi danh mục dịch vụ).
+ */
 router.post('/', CheckLogin, checkRole('ADMIN', 'MODERATOR'), async (req, res) => {
   try {
     const service = await serviceController.createService(req.body);
@@ -34,7 +44,10 @@ router.post('/', CheckLogin, checkRole('ADMIN', 'MODERATOR'), async (req, res) =
   }
 });
 
-// PUT /api/v1/services/:id
+/**
+ * [PUT] /api/v1/services/:id
+ * Chỉnh sửa giá cả hoặc thông tin dịch vụ.
+ */
 router.put('/:id', CheckLogin, checkRole('ADMIN', 'MODERATOR'), async (req, res) => {
   try {
     const service = await serviceController.updateService(req.params.id, req.body);
@@ -45,7 +58,10 @@ router.put('/:id', CheckLogin, checkRole('ADMIN', 'MODERATOR'), async (req, res)
   }
 });
 
-// DELETE /api/v1/services/:id
+/**
+ * [DELETE] /api/v1/services/:id
+ * Xóa một dịch vụ khỏi hệ thống (Chỉ Admin mới có quyền xóa).
+ */
 router.delete('/:id', CheckLogin, checkRole('ADMIN'), async (req, res) => {
   try {
     const service = await serviceController.deleteService(req.params.id);

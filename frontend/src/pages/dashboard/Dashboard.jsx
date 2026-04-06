@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Row, Col, Card, Statistic, Typography, Space } from 'antd';
 import { ClipboardList, Smartphone, Users, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -53,46 +53,54 @@ const buildStatusChartData = (tickets) => {
 };
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Lấy thông tin người dùng đang đăng nhập từ Context
+
+  // 1. Phân tích quyền hạn của User (ADMIN/MODERATOR mới xem được danh sách User khác)
   const roleName = useMemo(
     () => (typeof user?.role === 'string' ? user.role : user?.role?.name),
     [user]
   );
-  /** Backend: GET /users chỉ cho ADMIN, MODERATOR */
   const canListAllUsers = roleName === 'ADMIN' || roleName === 'MODERATOR';
 
+  // 2. Khởi tạo State để lưu trữ dữ liệu thống kê từ API gửi về
   const [stats, setStats] = useState({
     totalTickets: 0,
     totalDevices: 0,
     totalUsers: 0,
     totalRevenue: 0,
-    statusData: [],
-    revenueData: [],
+    statusData: [], // Lưu dữ liệu vẽ biểu đồ trạng thái (Biểu đồ cột)
+    revenueData: [], // Lưu dữ liệu vẽ xu hướng doanh thu (Biểu đồ đường)
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Quản lý trạng thái đang tải dữ liệu
 
   useEffect(() => {
     let cancelled = false;
 
+    // Hàm gọi API đồng thời để lấy dữ liệu trang Dashboard
     const fetchDashboardData = async () => {
-      setLoading(true);
+      setLoading(true); // Hiển thị biểu tượng đang tải (Loading)
       try {
+        // Gọi đồng thời các API phiếu sửa chữa và thiết bị
         const ticketsRes = await api.get('/repair-tickets');
         const devicesRes = await api.get('/devices');
 
         let users = [];
+        // Chỉ gọi API /users nếu người dùng có đủ quyền (Admin/Mod)
         if (canListAllUsers) {
           const usersRes = await api.get('/users');
           users = usersRes.data || [];
         }
 
-        if (cancelled) return;
+        if (cancelled) return; // Nếu Component đã bị đóng thì không cập nhật state nữa
 
         const tickets = ticketsRes.data || [];
         const devices = devicesRes.data || [];
+
+        // 3. Xử lý dữ liệu thô sang định dạng biểu đồ (Stats & Charts)
         const totalRevenue = calculateTotalRevenue(tickets);
         const statusChartData = buildStatusChartData(tickets);
 
+        // Tạo dữ liệu giả lập cho biểu đồ xu hướng theo tháng
         const revenueChartData = [
           { name: 'Tháng 1', revenue: totalRevenue * 0.1 },
           { name: 'Tháng 2', revenue: totalRevenue * 0.2 },
@@ -100,6 +108,7 @@ const Dashboard = () => {
           { name: 'Tháng 4', revenue: totalRevenue * 0.3 },
         ];
 
+        // Cập nhật tất cả dữ liệu vào State để React render lại giao diện
         setStats({
           totalTickets: tickets.length,
           totalDevices: devices.length,
@@ -110,17 +119,17 @@ const Dashboard = () => {
         });
       } catch {
         if (!cancelled) {
-          toast.error('Lỗi khi tải dữ liệu thống kê');
+          toast.error('Lỗi khi tải dữ liệu thống kê'); // Hiển thị thông báo lỗi (Toast)
         }
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setLoading(false); // Tắt biểu tượng đang tải
         }
       }
     };
 
     if (user) {
-      fetchDashboardData();
+      fetchDashboardData(); // Chỉ gọi API khi đã xác thực được User
     }
 
     return () => {

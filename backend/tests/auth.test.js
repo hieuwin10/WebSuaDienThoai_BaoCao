@@ -6,9 +6,9 @@ const userModel = require('../schemas/users');
 
 describe('Auth API Tests', () => {
   let testUser = {
-    username: 'testuser_' + Date.now(),
-    password: 'password123',
-    email: `test_${Date.now()}@example.com`,
+    username: 'testuser' + Math.floor(Math.random() * 1000000),
+    password: 'TestPassword123!',
+    email: `test${Date.now()}@example.com`,
     fullName: 'Test User'
   };
 
@@ -16,7 +16,7 @@ describe('Auth API Tests', () => {
     await roleModel.findOneAndUpdate(
       { name: 'USER' },
       { name: 'USER' },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
   });
 

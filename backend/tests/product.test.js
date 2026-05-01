@@ -9,9 +9,9 @@ describe('Device (Product) API Tests', () => {
   let cookie;
   let deviceId;
   let testUser = {
-    username: 'staff_' + Date.now(),
-    password: 'password123',
-    email: `staff_${Date.now()}@test.com`,
+    username: 'staff' + Math.floor(Math.random() * 1000000),
+    password: 'TestPassword123!',
+    email: `staff${Date.now()}@test.com`,
     fullName: 'Staff Member'
   };
 
@@ -20,14 +20,18 @@ describe('Device (Product) API Tests', () => {
     const adminRole = await roleModel.findOneAndUpdate(
       { name: 'ADMIN' },
       { name: 'ADMIN' },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     // Create an admin user for testing CRUD
     const user = await request(app)
       .post('/api/v1/auth/register')
-      .send({ ...testUser, username: 'admin_test_' + Date.now() });
+      .send({ ...testUser, username: 'admintest' + Math.floor(Math.random() * 1000000) });
     
+    if (user.statusCode !== 200) {
+      throw new Error(`Failed to register admin for test: ${JSON.stringify(user.body)}`);
+    }
+
     // Manually promote to ADMIN in DB for testing delete
     await userModel.findByIdAndUpdate(user.body._id, { role_id: adminRole._id });
 
@@ -39,6 +43,9 @@ describe('Device (Product) API Tests', () => {
       });
     
     cookie = loginRes.headers['set-cookie'];
+    if (!cookie) {
+      throw new Error('Failed to get auth cookie for tests');
+    }
   });
 
   afterAll(async () => {

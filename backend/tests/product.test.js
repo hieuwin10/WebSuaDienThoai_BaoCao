@@ -49,18 +49,23 @@ describe('Device (Product) API Tests', () => {
   });
 
   afterAll(async () => {
-    await deviceModel.deleteMany({ device_name: 'Test Device' });
+    await deviceModel.deleteMany({ brand: 'Apple' });
     await userModel.deleteMany({ email: /@test.com/ });
   });
 
   it('should create a new device', async () => {
+    // Get the user ID from the database for the customer_id field
+    const user = await userModel.findOne({ username: /admin/ });
+    
     const res = await request(app)
       .post('/api/v1/devices')
       .set('Cookie', cookie)
       .send({
-        device_name: 'Test Device',
-        model: 'Mock 1.0',
-        serial_number: 'SN' + Date.now()
+        brand: 'Apple',
+        model_name: 'iPhone 15 Pro',
+        imei: 'IMEI' + Date.now() + Math.floor(Math.random() * 1000),
+        customer_id: user._id,
+        condition_on_arrival: 'Mới 100%'
       });
     
     expect(res.statusCode).toBe(200);
@@ -82,7 +87,7 @@ describe('Device (Product) API Tests', () => {
       .set('Cookie', cookie);
     
     expect(res.statusCode).toBe(200);
-    expect(res.body.device_name).toBe('Test Device');
+    expect(res.body.model_name).toBe('iPhone 15 Pro');
   });
 
   it('should return 404 for non-existent device id', async () => {

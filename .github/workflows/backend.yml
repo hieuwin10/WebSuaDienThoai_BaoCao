@@ -39,6 +39,12 @@ jobs:
     - name: Install Dependencies
       run: npm install
 
+    - name: Run Tests
+      env:
+        MONGO_URI: mongodb://localhost:27017/test_db
+        JWT_SECRET: supersecret_test_key
+      run: npm test
+
     - name: Verify DB Connection and Run Seed Script
       env:
         MONGO_URI: mongodb://localhost:27017/test_db

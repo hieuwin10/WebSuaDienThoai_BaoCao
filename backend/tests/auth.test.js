@@ -63,4 +63,28 @@ describe('Auth API Tests', () => {
     
     expect(res.statusCode).toBe(400);
   });
+
+  it('should fail to register with an existing email', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send(testUser); // This user was already registered in the first test
+    
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('should get current user info (/me)', async () => {
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({
+        username: testUser.username,
+        password: testUser.password
+      });
+    
+    const res = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Cookie', loginRes.headers['set-cookie']);
+    
+    expect(res.statusCode).toBe(200);
+    expect(res.body.username).toBe(testUser.username);
+  });
 });

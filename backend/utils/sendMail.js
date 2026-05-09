@@ -12,6 +12,10 @@ const transporter = nodemailer.createTransport({
 
 module.exports = {
     sendMail: async function (to, url) {
+        if (process.env.NODE_ENV === 'test') {
+            console.log(`[Test] Gửi email tới ${to} với URL: ${url}`);
+            return;
+        }
         await transporter.sendMail({
             from: process.env.MAIL_FROM || 'noreply@doan-c3.com',
             to: to,

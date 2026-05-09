@@ -8,7 +8,7 @@ const { CheckLogin, checkRole } = require('../utils/authHandler');
  * [GET] /api/v1/services
  * Xem danh sách các dịch vụ đang cung cấp (Khách hàng cũng xem được).
  */
-router.get('/', CheckLogin, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const services = await serviceController.getAllServices();
     res.json(services);
@@ -21,7 +21,7 @@ router.get('/', CheckLogin, async (req, res) => {
  * [GET] /api/v1/services/:id
  * Xem chi tiết thông số của 1 loại dịch vụ.
  */
-router.get('/:id', CheckLogin, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const service = await serviceController.getServiceById(req.params.id);
     if (!service) return res.status(404).json({ message: 'Không tìm thấy dịch vụ' });

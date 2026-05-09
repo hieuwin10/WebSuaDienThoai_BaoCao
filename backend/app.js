@@ -1,7 +1,7 @@
-// Trigger CI
-require('dotenv').config();
-const express = require('express');
+// Trigger CI 2
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const express = require('express');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
@@ -10,15 +10,18 @@ const { seedRoles } = require('./utils/seedData');
 
 const app = express();
 
-app.use(cors());
+// Chặn CORS bảo mật: Chỉ cho phép domain frontend (mặc định vite là localhost:5173)
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
 app.use((req, res, next) => {
   console.log(`[Request] ${req.method} ${req.url}`);
   next();
 });
 
 // ─── View Engine Setup ────────────────────────────────────────────────────────
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
+// Đã loại bỏ EJS view engine để chuyển hoàn toàn sang RESTful API
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(logger('dev'));
@@ -59,7 +62,13 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ message: err.message });
+  }
+  if (err.code === 11000) {
+    return res.status(400).json({ message: 'Dữ liệu đã tồn tại trong hệ thống.' });
+  }
+  res.status(err.statusCode || err.status || 500).json({
     message: err.message || 'Lỗi server nội bộ',
   });
 });

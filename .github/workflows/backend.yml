@@ -5,22 +5,18 @@ on:
     branches: [ "main" ]
     paths:
       - 'backend/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'backend/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
   test-and-verify:
     runs-on: ubuntu-latest
     
-    services:
-      mongodb:
-        image: mongo:latest
-        ports:
-          - 27017:27017
-
     defaults:
       run:
         working-directory: ./backend
@@ -28,6 +24,11 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Start MongoDB with Replica Set
+      run: |
+        docker run -d --name mongodb -p 27017:27017 mongo:latest mongod --replSet rs0 --bind_ip_all
+        sleep 5
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -38,6 +39,11 @@ jobs:
 
     - name: Install Dependencies
       run: npm install
+
+    - name: Initialize MongoDB Replica Set
+      run: |
+        docker run --net host mongo:latest mongosh --eval 'rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] })'
+        sleep 5
 
     - name: Run Tests
       env:

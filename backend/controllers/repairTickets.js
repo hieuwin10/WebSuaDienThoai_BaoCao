@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const repairTicketModel = require('../schemas/repairTickets');
 const componentModel = require('../schemas/components');
 const warrantyModel = require('../schemas/warranty');
@@ -39,8 +40,8 @@ module.exports = {
    * Nhân viên xem hết, khách chỉ xem phiếu thuộc thiết bị của mình.
    */
   assertUserCanViewTicket(user, ticketDoc) {
-    if (!ticketDoc) return false;
     if (isStaffUser(user)) return true;
+    if (!ticketDoc) return false;
     const ownerId = getDeviceOwnerId(ticketDoc.device_id);
     return ownerId && ownerId === String(user._id);
   },
@@ -61,29 +62,45 @@ module.exports = {
    * Tạo phiếu sửa chữa mới: Xử lý cả trừ kho và tự động tạo bảo hành
    */
   createTicket: async (data) => {
-    let newTicket = new repairTicketModel(data);
-    await newTicket.save();
-    
-    // 1. Tự động trừ số lượng linh kiện trong kho khi có linh kiện được sử dụng
-    if (data.components_used && data.components_used.length > 0) {
-      for (const item of data.components_used) {
-        await componentModel.findByIdAndUpdate(
-          item.component_id,
-          { $inc: { stock_quantity: -item.quantity } } // Trừ (-) số lượng trong kho
-        );
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      let newTicket = new repairTicketModel(data);
+      await newTicket.save({ session });
+      
+      // 1. Tự động trừ số lượng linh kiện trong kho khi có linh kiện được sử dụng
+      if (data.components_used && data.components_used.length > 0) {
+        for (const item of data.components_used) {
+          const updatedComponent = await componentModel.findOneAndUpdate(
+            { _id: item.component_id, stock_quantity: { $gte: item.quantity } },
+            { $inc: { stock_quantity: -item.quantity } },
+            { session, new: true }
+          );
+          if (!updatedComponent) {
+            const err = new Error('Số lượng linh kiện trong kho không đủ');
+            err.status = 400;
+            throw err;
+          }
+        }
       }
-    }
 
-    // 2. Nếu trạng thái phiếu là 'completed' (Hoàn thành) thì tự động tạo phiếu bảo hành 6 tháng
-    if (data.status === 'completed') {
-      let warranty = new warrantyModel({
-        ticket: newTicket._id,
-        endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000) // Mặc định 6 tháng
-      });
-      await warranty.save();
-    }
+      // 2. Nếu trạng thái phiếu là 'completed' (Hoàn thành) thì tự động tạo phiếu bảo hành 6 tháng
+      if (data.status === 'completed') {
+        let warranty = new warrantyModel({
+          ticket: newTicket._id,
+          endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000) // Mặc định 6 tháng
+        });
+        await warranty.save({ session });
+      }
 
-    return newTicket;
+      await session.commitTransaction();
+      session.endSession();
+      return newTicket;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   },
 
   // Lấy danh sách tất cả phiếu đang tồn tại
@@ -114,50 +131,85 @@ module.exports = {
    * Cập nhật trạng thái phiếu (ví dụ: Chuyển từ Đang sửa sang Hoàn thành)
    */
   updateStatus: async (id, status) => {
-    let ticket = await repairTicketModel.findById(id);
-    if (!ticket) return null;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      let ticket = await repairTicketModel.findById(id).session(session);
+      if (!ticket) {
+        await session.abortTransaction();
+        session.endSession();
+        return null;
+      }
 
-    // Nếu phiếu bị hủy (canceled), hãy cộng lại số lượng linh kiện vào kho
-    if (status === 'canceled' && ticket.status !== 'canceled') {
-      for (const item of ticket.components_used || []) {
-        await componentModel.findByIdAndUpdate(
-          item.component_id,
-          { $inc: { stock_quantity: item.quantity } } // Cộng (+) lại vào kho
+      // Nếu phiếu bị hủy (canceled), hãy cộng lại số lượng linh kiện vào kho
+      if (status === 'canceled' && ticket.status !== 'canceled') {
+        for (const item of ticket.components_used || []) {
+          await componentModel.findByIdAndUpdate(
+            item.component_id,
+            { $inc: { stock_quantity: item.quantity } },
+            { session }
+          );
+        }
+      }
+
+      ticket.status = status;
+      await ticket.save({ session });
+
+      // Nếu trạng thái chuyển sang 'completed', hãy tạo/cập nhật thông tin bảo hành
+      if (status === 'completed') {
+        await warrantyModel.findOneAndUpdate(
+          { ticket: ticket._id },
+          { endDate: new Date(Date.now() + 180*24*60*60*1000) },
+          { upsert: true, new: true, session }
         );
       }
-    }
 
-    ticket.status = status;
-    await ticket.save();
-
-    // Nếu trạng thái chuyển sang 'completed', hãy tạo/cập nhật thông tin bảo hành
-    if (status === 'completed') {
-      await warrantyModel.findOneAndUpdate(
-        { ticket: ticket._id },
-        { endDate: new Date(Date.now() + 180*24*60*60*1000) },
-        { upsert: true, new: true }
-      );
+      await session.commitTransaction();
+      session.endSession();
+      return ticket;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
-    return ticket;
   },
 
   // Hàm chuyên biệt để hủy phiếu và hoàn trả linh kiện vào kho
   cancelTicket: async (id) => {
-    const ticket = await repairTicketModel.findById(id);
-    if (!ticket) return null;
-    if (ticket.status === 'canceled') return ticket;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const ticket = await repairTicketModel.findById(id).session(session);
+      if (!ticket) {
+        await session.abortTransaction();
+        session.endSession();
+        return null;
+      }
+      if (ticket.status === 'canceled') {
+        await session.abortTransaction();
+        session.endSession();
+        return ticket;
+      }
 
-    // Hoàn trả số lượng các linh kiện đã định lấy ra cho phiếu này về kho
-    for (const item of ticket.components_used || []) {
-      await componentModel.findByIdAndUpdate(
-        item.component_id,
-        { $inc: { stock_quantity: item.quantity } }
-      );
+      // Hoàn trả số lượng các linh kiện đã định lấy ra cho phiếu này về kho
+      for (const item of ticket.components_used || []) {
+        await componentModel.findByIdAndUpdate(
+          item.component_id,
+          { $inc: { stock_quantity: item.quantity } },
+          { session }
+        );
+      }
+
+      ticket.status = 'canceled';
+      await ticket.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+      return ticket;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
-
-    ticket.status = 'canceled';
-    await ticket.save();
-    return ticket;
   }
 };
-

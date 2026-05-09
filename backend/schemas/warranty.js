@@ -19,6 +19,11 @@ const warrantySchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Ngày hết hạn bảo hành là bắt buộc'],
     },
+    // Trạng thái bảo hành (Ví dụ: active, expired)
+    status: {
+      type: String,
+      default: 'active',
+    },
     // Các ghi chú về phạm vi bảo hành (ví dụ: Không bảo hành rơi vỡ, vào nước...)
     note: {
       type: String,

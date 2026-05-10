@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Select, Tag, Card, Typography } from 'antd';
-import { Edit, RefreshCcw, Lock, Unlock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Space, Modal, Form, Select, Tag, Card, Typography, Input } from 'antd';
+import { Edit, RefreshCcw, Lock, Unlock, Search } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 
@@ -12,6 +12,7 @@ const UserManagementPage = () => {
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
 
   const fetchData = async () => {
@@ -33,6 +34,14 @@ const UserManagementPage = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const filteredUsers = users.filter((u) => {
+    const q = searchText.toLowerCase();
+    return (
+      (u.username || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q)
+    );
+  });
 
   const handleEdit = (user) => {
     setEditingUser(user);
@@ -125,6 +134,14 @@ const UserManagementPage = () => {
           <p className="page-header__lead">Gán vai trò, khóa hoặc mở khóa tài khoản trong hệ thống.</p>
         </div>
         <div className="page-toolbar">
+          <Input
+            allowClear
+            placeholder="Tìm theo username hoặc email..."
+            prefix={<Search size={16} style={{ color: 'rgba(15,23,42,0.35)' }} />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 260 }}
+          />
           <Button icon={<RefreshCcw size={16} />} onClick={fetchData} loading={loading}>
             Làm mới
           </Button>
@@ -134,7 +151,7 @@ const UserManagementPage = () => {
       <Card className="surface-card" bordered={false}>
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={filteredUsers}
           rowKey="_id"
           loading={loading}
           pagination={{ pageSize: 10, showSizeChanger: true }}

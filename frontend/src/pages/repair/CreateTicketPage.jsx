@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Select, Row, Col, Divider, Space } from 'antd';
 import { ArrowLeft, Save, User, Phone, Clipboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -147,10 +147,10 @@ const CreateTicketPage = () => {
           <Divider style={{ borderColor: 'rgba(15,23,42,0.06)' }} />
           <Title level={5}>2. Thiết bị &amp; tình trạng</Title>
           <Form.Item name="device_id" label={<span style={{ fontWeight: 600 }}>Chọn thiết bị</span>} rules={[{ required: true, message: 'Vui lòng chọn thiết bị' }]}>
-            <Select showSearch placeholder="Chọn hoặc tìm theo IMEI" optionFilterProp="children">
+            <Select showSearch placeholder="Chọn hoặc tìm theo số sê-ri hoặc IMEI" optionFilterProp="children">
               {devices.map((dev) => (
                 <Option key={dev._id} value={dev._id}>
-                  {dev.model_name} — {dev.imei} ({dev.brand})
+                  {dev.model} — {dev.serial_number} ({dev.brand})
                 </Option>
               ))}
             </Select>

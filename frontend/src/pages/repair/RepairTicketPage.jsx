@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Card, Typography, Tag, Input, Select } from 'antd';
 import { Plus, Eye, Search, RefreshCcw, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,7 +49,7 @@ const RepairTicketPage = () => {
   };
 
   const filteredTickets = tickets.filter((ticket) => {
-    const deviceName = ticket.device_id?.model_name || '';
+    const deviceName = ticket.device_id?.model || '';
     const code = ticket.ticket_code || '';
     const matchesSearch =
       code.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -69,12 +69,12 @@ const RepairTicketPage = () => {
     {
       title: 'Thiết bị',
       key: 'device',
-      render: (_, record) => record.device_id?.model_name || 'Không có',
+      render: (_, record) => record.device_id?.model || 'Không có',
     },
     {
-      title: 'IMEI',
+      title: 'Số sê-ri / IMEI',
       key: 'imei',
-      render: (_, record) => record.device_id?.imei || 'Không có',
+      render: (_, record) => record.device_id?.serial_number || 'Không có',
     },
     {
       title: 'Trạng thái',

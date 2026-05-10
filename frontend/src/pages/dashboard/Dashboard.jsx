@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Row, Col, Card, Statistic, Typography, Space } from 'antd';
-import { ClipboardList, Smartphone, Users, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Row, Col, Card, Statistic, Typography, Space, Table, Tag } from 'antd';
+import { ClipboardList, Smartphone, Users, DollarSign, TrendingUp, AlertCircle, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
@@ -70,6 +70,7 @@ const Dashboard = () => {
     totalRevenue: 0,
     statusData: [], // Lưu dữ liệu vẽ biểu đồ trạng thái (Biểu đồ cột)
     revenueData: [], // Lưu dữ liệu vẽ xu hướng doanh thu (Biểu đồ đường)
+    recentTickets: [], // Lưu 5 phiếu gần nhất
   });
   const [loading, setLoading] = useState(false); // Quản lý trạng thái đang tải dữ liệu
 
@@ -116,6 +117,7 @@ const Dashboard = () => {
           totalRevenue,
           statusData: statusChartData,
           revenueData: revenueChartData,
+          recentTickets: tickets.slice(0, 5),
         });
       } catch {
         if (!cancelled) {
@@ -258,6 +260,65 @@ const Dashboard = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
+        <Col span={24}>
+          <Card
+            className="surface-card"
+            title={
+              <Space>
+                <Clock size={18} color="#0d9488" />
+                <span>Phiếu sửa chữa gần đây</span>
+              </Space>
+            }
+            loading={loading}
+          >
+            <Table
+              dataSource={stats.recentTickets}
+              rowKey="_id"
+              pagination={false}
+              size="small"
+              columns={[
+                {
+                  title: 'Mã phiếu',
+                  key: 'ticket_code',
+                  render: (_, record) => <code>{record.ticket_code || record._id.slice(-6).toUpperCase()}</code>,
+                },
+                {
+                  title: 'Thiết bị',
+                  key: 'device',
+                  render: (_, record) => record.device_id?.model || 'Không có',
+                },
+                {
+                  title: 'Trạng thái',
+                  dataIndex: 'status',
+                  key: 'status',
+                  render: (status) => {
+                    const statusMap = {
+                      pending: { color: 'warning', text: 'Chờ xử lý' },
+                      fixing: { color: 'processing', text: 'Đang sửa chữa' },
+                      repairing: { color: 'processing', text: 'Đang sửa chữa' },
+                      completed: { color: 'success', text: 'Hoàn thành' },
+                      canceled: { color: 'error', text: 'Đã hủy' },
+                      delivered: { color: 'blue', text: 'Đã giao' },
+                      ready_for_pickup: { color: 'purple', text: 'Chờ nhận máy' },
+                    };
+                    const normalized = String(status || '').toLowerCase();
+                    const { color, text } = statusMap[normalized] || { color: 'default', text: status };
+                    return <Tag color={color}>{text}</Tag>;
+                  },
+                },
+                {
+                  title: 'Tổng tiền',
+                  dataIndex: 'total_cost',
+                  key: 'total_cost',
+                  render: (price) => <strong style={{ color: '#0f172a' }}>{(price || 0).toLocaleString()}đ</strong>,
+                },
+              ]}
+            />
           </Card>
         </Col>
       </Row>

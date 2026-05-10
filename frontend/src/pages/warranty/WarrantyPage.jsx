@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, Input, Button, Typography, Descriptions, Tag, Empty, Space, Divider } from 'antd';
 import { Search, ShieldCheck, Smartphone } from 'lucide-react';
 import api from '../../services/api';
@@ -17,11 +17,11 @@ const WarrantyPage = () => {
     setLoading(true);
     try {
       const devRes = await api.get('/devices');
-      const device = devRes.data.find((d) => d.imei === imei);
+      const device = devRes.data.find((d) => d.serial_number === imei);
 
       if (!device) {
         setWarrantyInfo(null);
-        return toast.error('Không tìm thấy thiết bị với IMEI này trong hệ thống');
+        return toast.error('Không tìm thấy thiết bị với số sê-ri / IMEI này trong hệ thống');
       }
 
       const warRes = await api.get('/warranty');
@@ -72,15 +72,15 @@ const WarrantyPage = () => {
           title={(
             <Space>
               <Smartphone size={20} style={{ color: '#0d9488' }} />
-              <span>Thiết bị: {warrantyInfo.device.model_name || warrantyInfo.device.device_name}</span>
+              <span>Thiết bị: {warrantyInfo.device.model}</span>
             </Space>
           )}
         >
           <Descriptions bordered column={{ xs: 1, sm: 2 }} size="middle">
-            <Descriptions.Item label="IMEI">{warrantyInfo.device.imei}</Descriptions.Item>
+            <Descriptions.Item label="Số sê-ri / IMEI">{warrantyInfo.device.serial_number}</Descriptions.Item>
             <Descriptions.Item label="Thương hiệu">{warrantyInfo.device.brand}</Descriptions.Item>
             <Descriptions.Item label="Mẫu máy" span={2}>
-              {warrantyInfo.device.model_name || warrantyInfo.device.model}
+              {warrantyInfo.device.model}
             </Descriptions.Item>
           </Descriptions>
 

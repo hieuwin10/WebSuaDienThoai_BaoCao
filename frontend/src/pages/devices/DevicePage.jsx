@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Modal, Form, Input, Card, Typography, Tooltip } from 'antd';
 import { Plus, Edit, Trash2, Smartphone, Search, RefreshCcw } from 'lucide-react';
 import api from '../../services/api';
@@ -42,30 +42,37 @@ const DevicePage = () => {
   const handleEdit = (device) => {
     setEditingDevice(device);
     form.setFieldsValue({
-      imei: device.imei,
+      serial_number: device.serial_number,
       brand: device.brand,
-      model_name: device.model_name || device.model,
+      model: device.model,
     });
     setIsModalVisible(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa thiết bị này?')) {
-      try {
-        await api.delete(`/devices/${id}`);
-        toast.success('Xóa thiết bị thành công');
-        fetchDevices();
-      } catch {
-        toast.error('Lỗi khi xóa thiết bị');
-      }
-    }
+  const handleDelete = (id) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc chắn muốn xóa thiết bị này? Thao tác này không thể hoàn tác.',
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await api.delete(`/devices/${id}`);
+          toast.success('Xóa thiết bị thành công');
+          fetchDevices();
+        } catch {
+          toast.error('Lỗi khi xóa thiết bị');
+        }
+      },
+    });
   };
 
   const onFinish = async (values) => {
     const payload = {
-      imei: values.imei,
+      serial_number: values.serial_number,
       brand: values.brand,
-      model_name: values.model_name,
+      model: values.model,
       customer_id: editingDevice?.customer_id?._id || editingDevice?.customer_id || user?._id,
     };
 
@@ -85,23 +92,23 @@ const DevicePage = () => {
   };
 
   const filteredDevices = devices.filter((device) => {
-    const imei = String(device.imei || '');
-    const modelName = String(device.model_name || device.device_name || '');
+    const serial_number = String(device.serial_number || '');
+    const model = String(device.model || '');
     const q = searchText.toLowerCase();
-    return imei.toLowerCase().includes(q) || modelName.toLowerCase().includes(q);
+    return serial_number.toLowerCase().includes(q) || model.toLowerCase().includes(q);
   });
 
   const columns = [
     {
-      title: 'Tên thiết bị',
-      key: 'model_name',
-      render: (_, record) => record.model_name || record.device_name || 'Không có',
-      sorter: (a, b) => String(a.model_name || '').localeCompare(String(b.model_name || '')),
+      title: 'Model',
+      key: 'model',
+      render: (_, record) => record.model || 'Không có',
+      sorter: (a, b) => String(a.model || '').localeCompare(String(b.model || '')),
     },
     {
-      title: 'IMEI',
-      dataIndex: 'imei',
-      key: 'imei',
+      title: 'Số sê-ri / IMEI',
+      dataIndex: 'serial_number',
+      key: 'serial_number',
       render: (text) => <code>{text}</code>,
     },
     {
@@ -150,7 +157,7 @@ const DevicePage = () => {
         <div className="page-toolbar">
           <Input
             allowClear
-            placeholder="Tìm theo IMEI hoặc model..."
+            placeholder="Tìm theo số sê-ri hoặc model..."
             prefix={<Search size={16} style={{ color: 'rgba(15,23,42,0.35)' }} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -188,11 +195,11 @@ const DevicePage = () => {
         cancelText="Hủy"
       >
         <Form form={form} onFinish={onFinish} layout="vertical">
-          <Form.Item name="model_name" label="Model thiết bị" rules={[{ required: true, message: 'Vui lòng nhập model thiết bị' }]}>
+          <Form.Item name="model" label="Model thiết bị" rules={[{ required: true, message: 'Vui lòng nhập model thiết bị' }]}>
             <Input prefix={<Smartphone size={16} />} placeholder="Ví dụ: iPhone 13 Pro Max" />
           </Form.Item>
-          <Form.Item name="imei" label="Số IMEI" rules={[{ required: true, message: 'Vui lòng nhập IMEI' }]}>
-            <Input placeholder="Nhập 15 số IMEI" />
+          <Form.Item name="serial_number" label="Số sê-ri / IMEI" rules={[{ required: true, message: 'Vui lòng nhập số sê-ri hoặc IMEI' }]}>
+            <Input placeholder="Nhập số sê-ri hoặc 15 số IMEI" />
           </Form.Item>
           <Form.Item name="brand" label="Thương hiệu" rules={[{ required: true, message: 'Vui lòng nhập thương hiệu' }]}>
             <Input placeholder="Ví dụ: Apple" />

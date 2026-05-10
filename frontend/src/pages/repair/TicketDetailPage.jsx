@@ -191,8 +191,8 @@ const TicketDetailPage = () => {
             )}
           >
             <Descriptions column={{ xs: 1, sm: 2 }} bordered size="small">
-              <Descriptions.Item label={lbDevice}>{ticket.device_id?.model_name || none}</Descriptions.Item>
-              <Descriptions.Item label={lbImei}>{ticket.device_id?.imei || none}</Descriptions.Item>
+              <Descriptions.Item label={lbDevice}>{ticket.device_id?.model || none}</Descriptions.Item>
+              <Descriptions.Item label={lbImei}>{ticket.device_id?.serial_number || none}</Descriptions.Item>
               <Descriptions.Item label={lbCreated} span={2}>
                 {dayjs(ticket.createdAt).format('DD/MM/YYYY HH:mm')}
               </Descriptions.Item>

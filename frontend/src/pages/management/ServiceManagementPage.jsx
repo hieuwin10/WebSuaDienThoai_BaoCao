@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Modal, Form, Input, Card, Typography, Tabs, InputNumber, Tag } from 'antd';
 import { Plus, Edit, Trash2, Package, Hammer, RefreshCcw } from 'lucide-react';
 import api from '../../services/api';
@@ -56,17 +56,24 @@ const ServiceManagementPage = () => {
     setIsModalVisible(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa mục này?')) {
-      try {
-        const endpoint = activeTab === 'services' ? '/services' : '/components';
-        await api.delete(`${endpoint}/${id}`);
-        toast.success('Xóa thành công');
-        fetchData();
-      } catch {
-        toast.error('Lỗi khi xóa dữ liệu');
-      }
-    }
+  const handleDelete = (id) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc chắn muốn xóa mục này? Thao tác này không thể hoàn tác.',
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const endpoint = activeTab === 'services' ? '/services' : '/components';
+          await api.delete(`${endpoint}/${id}`);
+          toast.success('Xóa thành công');
+          fetchData();
+        } catch {
+          toast.error('Lỗi khi xóa dữ liệu');
+        }
+      },
+    });
   };
 
   const onFinish = async (values) => {
@@ -136,7 +143,9 @@ const ServiceManagementPage = () => {
       dataIndex: 'stock_quantity',
       key: 'stock_quantity',
       render: (count) => (
-        <Tag color={count < 5 ? 'volcano' : 'green'}>{count}</Tag>
+        <Tag color={count < 5 ? 'volcano' : 'green'}>
+          {count} {count < 5 ? '— Sắp hết' : ''}
+        </Tag>
       ),
     },
     {
